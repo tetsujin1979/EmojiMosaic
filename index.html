@@ -151,10 +151,10 @@
     function getEmoji(red, green, blue) {
       var distanceToColour = [];
       colours.forEach((colour) => {
-        var redDiff = Math.abs(red - colour.red);
-        var greenDiff = Math.abs(green - colour.green);
-        var blueDiff = Math.abs(blue - colour.blue);
-        var difference = redDiff + greenDiff + blueDiff;
+        var redDiff = Math.pow(red - colour.red, 2);
+        var greenDiff = Math.pow(green - colour.green, 2);
+        var blueDiff = Math.pow(blue - colour.blue, 2);
+        var difference = Math.sqrt(redDiff + greenDiff + blueDiff);
         distanceToColour.push({difference: difference, emoji: colour.emoji});
       });
       distanceToColour.sort((a, b) => a.difference - b.difference);
