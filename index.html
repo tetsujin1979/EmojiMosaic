@@ -1,0 +1,165 @@
+<html>
+<head>
+        <title>Images to Emoji</title>
+</head>
+<body>
+    <div>
+      <input type="file" id="fileInput">
+    </div>
+    <div>
+      <canvas id="imageCanvas" style="border: 1px solid black"></canvas>
+      <canvas id="twitterCanvas" style="border: 1px solid black"></canvas>
+      <canvas id="facebookCanvas" style="border: 1px solid black"></canvas>
+    </div>
+    <div id="twitterEmoji">
+    </div>
+    <div id="facebookEmoji">
+    </div>
+<script type="text/javascript">
+    var imageCanvas = document.getElementById('imageCanvas');
+    var twitterCanvas = document.getElementById('twitterCanvas');
+    var facebookCanvas = document.getElementById('facebookCanvas');
+    var twitterEmoji = document.getElementById('twitterEmoji');
+    var facebookEmoji = document.getElementById('facebookEmoji');
+
+    var colours = [{
+        id: "red",
+        red: 255,
+        green: 0,
+        blue: 0,
+        emoji: '&#x1F7E5;'
+      },{
+        id: "orange",
+        red: 255,
+        green: 127,
+        blue: 0,
+        emoji: '&#x1F7E7;'      
+      },{
+        id: "yellow",
+        red: 255,
+        green: 255,
+        blue: 0,
+        emoji: '&#x1F7E8;'      
+      },{
+        id: "green",
+        red: 0,
+        green: 255,
+        blue: 0,
+        emoji: '&#x1F7E9;'      
+      },{
+        id: "blue",
+        red: 0,
+        green: 0,
+        blue: 255,
+        emoji: '&#x1F7E6;'      
+      },{
+        id: "purple",
+        red: 128,
+        green: 0,
+        blue: 128,
+        emoji: '&#x1F7EA;'      
+      },{
+        id: "brown",
+        red: 165,
+        green: 42,
+        blue: 42,
+        emoji: '&#x1F7EB;'
+      },{
+        id: "black",
+        red: 0,
+        green: 0,
+        blue: 0,
+        emoji: '&#x2B1B;'      
+      },{
+        id: "white",
+        red: 255,
+        green: 255,
+        blue: 255,
+        emoji: '&#x2B1C;'
+      }];
+
+    document.getElementById('fileInput').onchange = function(e) {
+      var img = new Image();
+      img.onload = onImageLoad;
+      img.onerror = onError;
+      img.src = URL.createObjectURL(this.files[0]);
+    };
+
+    function onImageLoad() {
+      var dimension = this.width > this.height ? this.width : this.height;
+      dimension = (dimension > 500) ? 500 : dimension;
+      imageCanvas.width = dimension;
+      imageCanvas.height = dimension;
+      twitterCanvas.width = dimension;
+      twitterCanvas.height = dimension;
+      facebookCanvas.width = dimension;
+      facebookCanvas.height = dimension;
+
+      var imageCanvasContext = imageCanvas.getContext('2d');
+
+      imageCanvasContext.fillStyle = "white";
+      imageCanvasContext.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
+      var x, y;
+      if (this.width <= 500 && this.height <= 500) {
+        x = (imageCanvas.width - this.width) / 2;
+        y = (imageCanvas.height - this.height) / 2;
+        imageCanvasContext.drawImage(this, x, y);
+      } else {
+        var scale = 500 / (this.width > this.height ? this.width : this.height);
+        console.log("scale: " + scale);
+        var scaledX = this.width * scale;
+        var scaledY = this.height * scale;
+        x = (imageCanvas.width - scaledX) / 2;
+        y = (imageCanvas.height - scaledY) / 2;
+        imageCanvasContext.drawImage(this, x, y, scaledX, scaledY);
+      }
+      processImage(twitterCanvas, imageCanvasContext, 11, twitterEmoji);
+      processImage(facebookCanvas, imageCanvasContext, 36, facebookEmoji);
+    }
+
+    function processImage(canvas, imageCanvasContext, gridSize, targetDiv) {
+      var canvasContext = canvas.getContext('2d');
+      var htmlString = '';
+      for (var imageY = 0; imageY < canvas.height; imageY += (imageCanvas.height / gridSize)) {
+        for (var imageX = 0; imageX < canvas.width; imageX += (imageCanvas.width / gridSize)) {
+          var red = 0;
+          var green = 0;
+          var blue = 0;
+          var colourCount = 0;
+          for (var pixelY = imageY; pixelY < (imageY + (canvas.height / gridSize)); pixelY++) {
+            for (var pixelX = imageX; pixelX < (imageX + (canvas.width / gridSize)); pixelX++) {
+              var colour = imageCanvasContext.getImageData(pixelX, pixelY, 1, 1).data;
+              red += colour[0];
+              green += colour[1];
+              blue += colour[2];
+              colourCount++;
+            }
+          }
+          canvasContext.fillStyle = "rgba(" + (red / colourCount) + "," + (green / colourCount) + "," + (blue / colourCount) + ")";
+          canvasContext.fillRect(imageX, imageY, (canvas.width / gridSize), (canvas.height / gridSize));
+          htmlString += getEmoji((red / colourCount), (green / colourCount), (blue / colourCount));
+        }
+        htmlString += "<br/>"; 
+      }
+      targetDiv.innerHTML = htmlString;
+    }
+
+    function onError() {
+      console.error("The provided file couldn't be loaded as an Image media");
+    }
+
+    function getEmoji(red, green, blue) {
+      var distanceToColour = [];
+      colours.forEach((colour) => {
+        var redDiff = Math.abs(red - colour.red);
+        var greenDiff = Math.abs(green - colour.green);
+        var blueDiff = Math.abs(blue - colour.blue);
+        var difference = redDiff + greenDiff + blueDiff;
+        distanceToColour.push({difference: difference, emoji: colour.emoji});
+      });
+      distanceToColour.sort((a, b) => a.difference - b.difference);
+      return distanceToColour[0].emoji;
+    }
+</script>
+</body>
+</html>
